@@ -1,18 +1,33 @@
 package sw2.clase05ej2.entity;
 
 import javax.persistence.*;
+import javax.validation.constraints.*;
 import java.math.BigDecimal;
 
 @Entity
 @Table(name="products")
 public class Product {
 
+    @Column(nullable = false)
+    @NotBlank
+    @Size(max = 40, message = "El nombre no puede tener mas de 40 caracteres")
+    private String productname;
+    @Positive
+    @Digits(integer = 10, fraction = 4)
+    private BigDecimal unitprice;
+    @Digits(integer = 10, fraction = 0)
+    @Max(value = 32767)
+    @Min(value = 0)
+    private int unitsinstock;
+    @Digits(integer = 10, fraction = 0)
+    @Max(value = 32767)
+    @Min(value = 0)
+    private int unitsonorder;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name="ProductID")
     private int id;
-    @Column(nullable = false)
-    private String productname;
     @ManyToOne
     @JoinColumn(name = "SupplierID")
     private Supplier supplier;
@@ -20,9 +35,6 @@ public class Product {
     @JoinColumn(name = "CategoryID")
     private Category category;
     private String quantityperunit;
-    private BigDecimal unitprice;
-    private int unitsinstock;
-    private int unitsonorder;
     private int reorderlevel;
     @Column(nullable = false)
     private boolean discontinued;

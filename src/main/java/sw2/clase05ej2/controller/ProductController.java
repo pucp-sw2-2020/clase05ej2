@@ -3,6 +3,8 @@ package sw2.clase05ej2.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import sw2.clase05ej2.entity.Product;
@@ -10,6 +12,9 @@ import sw2.clase05ej2.repository.CategoryRepository;
 import sw2.clase05ej2.repository.ProductRepository;
 import sw2.clase05ej2.repository.SupplierRepository;
 
+import javax.validation.Valid;
+import java.beans.PropertyEditorSupport;
+import java.math.BigDecimal;
 import java.util.Optional;
 
 @Controller
@@ -39,15 +44,19 @@ public class ProductController {
     }
 
     @PostMapping("/save")
-    public String guardarProducto(@ModelAttribute("product") Product product,
-                                  RedirectAttributes attr) {
-        if (product.getId() == 0) {
-            attr.addFlashAttribute("msg", "Producto creado exitosamente");
+    public String guardarProducto(@ModelAttribute("product") @Valid Product product, BindingResult bindingResult,
+                                  Model model, RedirectAttributes attr) {
+
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("listaCategorias", categoryRepository.findAll());
+            model.addAttribute("listaProveedores", supplierRepository.findAll());
+            return "product/form";
         } else {
-            attr.addFlashAttribute("msg", "Producto actualizado exitosamente");
+            attr.addFlashAttribute("msg", "Producto " + (product.getId() == 0 ? "creado" : "actualizado") + " exitosamente");
+            productRepository.save(product);
+            return "redirect:/product";
         }
-        productRepository.save(product);
-        return "redirect:/product";
+
     }
 
     @GetMapping("/edit")
@@ -79,6 +88,34 @@ public class ProductController {
         }
         return "redirect:/product";
 
+    }
+
+    @InitBinder("product")
+    public void validatorDataBinding(WebDataBinder binder) {
+        PropertyEditorSupport integerValidator = new PropertyEditorSupport() {
+            @Override
+            public void setAsText(String text) throws IllegalArgumentException {
+                try {
+                    this.setValue(Integer.parseInt(text));
+                } catch (NumberFormatException e) {
+                    this.setValue(0);
+                }
+            }
+        };
+        PropertyEditorSupport bigDecimalValidator = new PropertyEditorSupport() {
+            @Override
+            public void setAsText(String text) throws IllegalArgumentException {
+                try {
+                    this.setValue(new BigDecimal(text));
+                } catch (NumberFormatException e) {
+                    this.setValue(0);
+                }
+            }
+        };
+        binder.registerCustomEditor(Integer.class, "unitsinstock", integerValidator);
+        binder.registerCustomEditor(Integer.class, "unitsonorder", integerValidator);
+        binder.registerCustomEditor(Integer.class, "reorderlevel", integerValidator);
+        binder.registerCustomEditor(BigDecimal.class, "unitprice", bigDecimalValidator);
     }
 
 }
